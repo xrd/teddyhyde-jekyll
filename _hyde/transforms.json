@@ -1,0 +1,16 @@
+[
+    {
+        "code": "<img src=\"{{IMAGE}}\" style=\"border-color: {{PROMPT}}\">\n", 
+        "name": "Colored image", 
+        "prompt": "Enter the color you want to use", 
+        "type": "image", 
+        "version": 1
+    }, 
+    {
+        "code": "<div ng-controller=\"FooCtrl\">{{myVar}}</div>\n", 
+        "name": "Angular FooCtrl", 
+        "prompt": null, 
+        "type": "insert", 
+        "version": 1
+    }
+]
