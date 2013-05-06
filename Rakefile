@@ -312,6 +312,56 @@ Dir['_rake/*.rake'].each { |r| load r }
 require 'json'
 
 namespace :teddyhyde do
+  desc "Print teddyhyde transform examples"
+  task "transform_examples" do
+    examples = <<"END"
+
+It is best to use rake teddyhyde:transform to add one of these, as you need to make
+sure it is valid JSON.
+
+These are the placeholders replaced by the choice of image or the prompted response.
+
+IMAGE is what is replaced once you choose the image.
+PROMPT is what is replaced by the response once prompted.
+
+The placeholders need to be surrounded by two curly braces on each side, like {{placeholder}}
+
+You can use filters like 'html', 'url', 'escdblquotes' and a regex
+replacement filter of the form: /abc/xyz/. 
+
+You can stick the placeholder in multiple times and all of them will be replaced.
+
+EXAMPLES:
+
+### Select an image and insert the URI to it:
+
+<img src="{{IMAGE}}"/>
+
+### Select an image and prompt the user for text to replace:
+
+<img src="{{IMAGE}}"/>
+<div class="caption">{{PROMPT}}</div>
+
+### Prompt the user for text, URL escaping it:
+
+<img src="http://someimagegeneratorserver.com?text={{PROMPT|url}}">
+
+### Prompt user for text, HTML escaping it (when user needs to enter "5 < 2")
+
+The equation: {{PROMPT|html}}
+
+### Prompt user for image and then modify the URL dynamically to strip out "assets"
+### from the front. For example, if the image URI returned once you choose an image
+### is /assets/mynewfile.jpg, this will write out mynewfile.jpg.
+
+<img src="{{IMAGE|/^\/assets\///}">
+
+END
+
+    puts examples
+  end
+    
+  
   desc "Add a new Teddy Hyde transform"
   task "transform" do
     types = %w{ insert replace image }
@@ -327,38 +377,46 @@ namespace :teddyhyde do
         prompt = STDIN.gets.chomp
       end
 
+      puts "Remember you can use filters like 'html', 'url', 'escdblquotes',\n" +
+        "or even a replacement regex '/foo/bar/' to process the result.\n" +
+        "These filters cannot be chained." if prompt or image
+      
       puts "Enter the code you want to insert. It can be multiple lines. Finish input with a single . character"
       code = ""
       while '.' != ( line = STDIN.gets.chomp )
         code += line + "\n"
       end
 
+      error = false
+      
       # verify prompt is correct
       if prompt
         unless code =~ /\{\{PROMPT\}\}/m
           puts "Your code should use {{PROMPT}} to replace the prompt response" 
-          exit
+          error = true
         end
       end
 
       if "image" == type
         unless code =~ /\{\{IMAGE\}\}/m
           puts "your code should have {{IMAGE}} which will be replaced with the image reference"
-          exit
+          error = true
         end
       end
 
-      puts "Give this a short name for the menu"
-      name = STDIN.gets.chomp
-      
-      # Dump it out
-      stuff = []
-      transform = { prompt: prompt, code: code, type: type, version: 1, name: name }
-
-      old = JSON.parse File.read( "_hyde/transforms.json" )
-      # Join them together
-      old << transform
-      puts jj old
+      unless error 
+        puts "Give this a short name for the menu"
+        name = STDIN.gets.chomp
+        
+        # Dump it out
+        stuff = []
+        transform = { prompt: prompt, code: code, type: type, version: 1, name: name }
+        
+        old = JSON.parse File.read( "_hyde/transforms.json" )
+        # Join them together
+        old << transform
+        puts jj old
+      end
     else
       puts "Invalid entry"
     end
